@@ -67,44 +67,6 @@ N_tot = len(spin)
 
 print("Mean spin:", np.mean(spin))
 
-def lnprob(x,*args):
-
-    M = x[0]
-    D, d_ra, d_dec, Q, q1_ra, q1_dec, q2_ra, q2_dec = x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8]
-
-    if M<0.3 or M>0.7 or D>0.3 or D<0. or Q>0.3 or Q<0.:
-        return -np.inf
-
-    if d_dec>np.pi/2 or d_dec<-np.pi/2 or d_ra>2.*np.pi or d_ra<0:
-        return -np.inf
-
-    if q1_dec>np.pi/2 or q1_dec<-np.pi/2 or q2_dec>np.pi/2 or q2_dec<-np.pi/2 or q1_ra>2.*np.pi or q1_ra<0 or q2_ra>2.*np.pi or q2_ra<0:
-        return -np.inf
-
-    if q1_ra > q2_ra:
-        return -np.inf
-
-    d_theta = np.pi/2 - d_dec
-    q1_theta = np.pi/2 - q1_dec
-    q2_theta = np.pi/2 - q2_dec
-
-    #(sinθ1sinθ2cos(ϕ1−ϕ2)+cosθ1cosθ2)
-
-    prob = M + D * (np.sin(d_theta) * np.sin(n_theta) * np.cos(d_ra - n_ra) + np.cos(d_theta) * np.cos(n_theta)) + Q * (
-    (np.sin(q1_theta) * np.sin(n_theta) * np.cos(q1_ra - n_ra) + np.cos(q1_theta) * np.cos(n_theta)) *
-    (np.sin(q2_theta) * np.sin(n_theta) * np.cos(q2_ra - n_ra) + np.cos(q2_theta) * np.cos(n_theta))
-    - 1/3 * (np.sin(q1_theta) * np.sin(q2_theta) * np.cos(q1_ra - q2_ra) + np.cos(q1_theta) * np.cos(q2_theta)) )
-
-    if np.sum(prob<0)>0 or np.sum(prob>1)>0:
-        print("Sampling P<0 or P>1:", M, D, Q, flush=True)
-        return -np.inf
-
-    lnlike = np.sum(np.log(prob)*spin + np.log(1-prob)*(1-spin)) 
-    
-    lnprior = np.log(np.cos(d_dec)) + np.log(np.cos(q1_dec)) + np.log(np.cos(q2_dec))
-    
-    return lnlike + lnprior
-
 def lnlike(x,*args):
 
     M = x[0]
@@ -141,8 +103,20 @@ def lnlike(x,*args):
     
     return lnlike
 
-def nll(x):
-    return -lnprob(x)
+def lnprob(x,*args):
+    d_dec, q1_dec, q2_dec = x[3], x[6], x[8]
+
+    if d_dec>np.pi/2 or d_dec<-np.pi/2:
+        return -np.inf
+
+    if q1_dec>np.pi/2 or q1_dec<-np.pi/2 or q2_dec>np.pi/2 or q2_dec<-np.pi/2:
+        return -np.inf
+
+    lnlike_value = lnlike(x,*args)
+
+    lnprior = np.log(np.cos(d_dec)) + np.log(np.cos(q1_dec)) + np.log(np.cos(q2_dec))
+
+    return lnlike_value + lnprior
 
 def ll(x):
     return -lnlike(x)
