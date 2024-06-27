@@ -67,7 +67,7 @@ N_tot = len(spin)
 
 print("Mean spin:", np.mean(spin))
 
-def lnprob(x,*args):
+def lnlike(x,*args):
 
     M = x[0]
     D, d_ra, d_dec, Q, q1_ra, q1_dec, q2_ra, q2_dec = x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8]
@@ -99,14 +99,27 @@ def lnprob(x,*args):
         print("Sampling P<0 or P>1:", M, D, Q, flush=True)
         return -np.inf
 
-    lnlike = np.sum(np.log(prob)*spin + np.log(1-prob)*(1-spin)) 
+    lnlike = np.sum(np.log(prob)*spin + np.log(1-prob)*(1-spin))
     
+    return lnlike
+
+def lnprob(x,*args):
+    d_dec, q1_dec, q2_dec = x[3], x[6], x[8]
+
+    if d_dec>np.pi/2 or d_dec<-np.pi/2:
+        return -np.inf
+
+    if q1_dec>np.pi/2 or q1_dec<-np.pi/2 or q2_dec>np.pi/2 or q2_dec<-np.pi/2:
+        return -np.inf
+
+    lnlike_value = lnlike(x,*args)
+
     lnprior = np.log(np.cos(d_dec)) + np.log(np.cos(q1_dec)) + np.log(np.cos(q2_dec))
-    
-    return lnlike + lnprior
+
+    return lnlike_value + lnprior
 
 def nll(x):
-    return -lnprob(x)
+    return -lnlike(x)
 
 min_values = []
 min1 = np.inf
@@ -127,7 +140,7 @@ print("ML params:", params, min1)
 # for value in min_values:
     # print(value)
 
-L = lnprob(params)
+L = lnlike(params)
 
 k = len(params)
 n = len(data)
