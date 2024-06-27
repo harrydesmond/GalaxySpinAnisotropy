@@ -118,7 +118,7 @@ def lnprob(x,*args):
 
     return lnlike_value + lnprior
 
-def ll(x):
+def nll(x):
     return -lnlike(x)
 
 min_values = []
@@ -129,7 +129,7 @@ for m in range(10):
     q1_ra_init = np.random.uniform(0, 2.*np.pi)
     q2_ra_init = np.random.uniform(q1_ra_init, 2 * np.pi)
     inpt += [q1_ra_init, np.random.uniform(-np.pi/2, np.pi/2), q2_ra_init, np.random.uniform(-np.pi/2, np.pi/2)]
-    res = minimize(ll, inpt, method="Nelder-Mead")
+    res = minimize(nll, inpt, method="Nelder-Mead")
     if res['fun'] < min1:
         params = res.x
         min1 = res['fun']
