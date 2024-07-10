@@ -149,6 +149,20 @@ bic = -2 * (L) + k * np.log(n)
 
 print("BIC:", bic)
 
+bic_values_for_M = [
+    21012.4110286252, # Longo
+    101051.90731787,  # Iye
+    8469.24333237917, # SDSS_DR7
+    193871.969825225, # GAN_M
+    192618.331159577, # GAN_NM
+    107916.724775013, # Shamir
+    39828.6986758339  # PS_DR1
+]
+
+delta_bic = bic - bic_values_for_M[data_choice]
+
+print("Delta BIC:", delta_bic)
+
 ndim = 9
 nwalkers = 22
 max_iters = 600000
