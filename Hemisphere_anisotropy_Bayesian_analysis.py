@@ -1,5 +1,5 @@
 # Calculate parameter constraints and create corner plot in a Bayesian MCMC analysis
-# This code infers monopole, dipole and quadrupole, but can easily be modified to restrict to some subset
+# This code infers monopole (M) and hemisphere anisotropy (A), but can easily be modified to restrict to some subset
 # Parallelised Open-MP in MCMC sampling
 
 import numpy as np
@@ -243,7 +243,7 @@ for i in range(nwalkers):
     plt.scatter(np.array(x)[indices] + burnin, like_i[indices], s=10)
 plt.xlabel("Walker step")
 plt.ylabel("ln(Likelihood)")
-plt.savefig("Plots/"+name+"_MDQ_walkers.png", bbox_inches="tight")
+plt.savefig("Plots/"+name+"_MA_walkers.png", bbox_inches="tight")
 
 labels = [r'${\rm \widehat{M}}$', r'${\rm \widehat{A}}$', r'${\rm a_{\alpha}}$', r'${\rm a_{\delta}}$']
 
@@ -256,7 +256,7 @@ corner.corner(samples, labels=labels, show_titles=True, quantiles=[], plot_datap
               title_kwargs={"fontsize": 18}, title_fmt='.3f', label_kwargs={"fontsize": 18},
               verbose=True, truths=truth_values)
 
-plt.savefig("Plots/"+name+"_MDQ_corner.png", bbox_inches="tight")
+plt.savefig("Plots/"+name+"_MA_corner.png", bbox_inches="tight")
 
 param_means = np.mean(samples, axis=0)
 param_std = np.std(samples, axis=0)
