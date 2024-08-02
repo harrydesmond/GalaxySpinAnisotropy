@@ -1,5 +1,5 @@
 # Calculate parameter constraints and create corner plot in a Bayesian MCMC analysis
-# This code infers monopole, dipole and quadrupole, but can easily be modified to restrict to some subset
+# This code infers monopole (M) and hemisphere anisotropy (A), but can easily be modified to restrict to some subset
 # Parallelised Open-MP in MCMC sampling
 
 import numpy as np
@@ -70,52 +70,39 @@ print("Mean spin:", np.mean(spin))
 def lnlike(x,*args):
 
     M = x[0]
-    D, d_ra, d_dec, Q, q1_ra, q1_dec, q2_ra, q2_dec = x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8]
+    A, a_ra, a_dec = x[1], x[2], x[3]
 
-    if M<0.3 or M>0.7 or D>0.3 or D<0. or Q>0.3 or Q<0.:
+    if a_dec > np.pi / 2 or a_dec < -np.pi / 2 or a_ra > 2. * np.pi or a_ra < 0:
         return -np.inf
 
-    if d_dec>np.pi/2 or d_dec<-np.pi/2 or d_ra>2.*np.pi or d_ra<0:
+    if M < 0.3 or M > 0.7 or A > 0.3 or A < 0.:
         return -np.inf
 
-    if q1_dec>np.pi/2 or q1_dec<-np.pi/2 or q2_dec>np.pi/2 or q2_dec<-np.pi/2 or q1_ra>2.*np.pi or q1_ra<0 or q2_ra>2.*np.pi or q2_ra<0:
-        return -np.inf
+    cos_theta = (np.sin(a_dec) * np.sin(n_dec) + np.cos(a_dec) * np.cos(n_dec) * np.cos(a_ra - n_ra))
 
-    if q1_ra > q2_ra:
-        return -np.inf
-
-    d_theta = np.pi/2 - d_dec
-    q1_theta = np.pi/2 - q1_dec
-    q2_theta = np.pi/2 - q2_dec
-
-    #(sinθ1sinθ2cos(ϕ1−ϕ2)+cosθ1cosθ2)
-
-    prob = M + D * (np.sin(d_theta) * np.sin(n_theta) * np.cos(d_ra - n_ra) + np.cos(d_theta) * np.cos(n_theta)) + Q * (
-    (np.sin(q1_theta) * np.sin(n_theta) * np.cos(q1_ra - n_ra) + np.cos(q1_theta) * np.cos(n_theta)) *
-    (np.sin(q2_theta) * np.sin(n_theta) * np.cos(q2_ra - n_ra) + np.cos(q2_theta) * np.cos(n_theta))
-    - 1/3 * (np.sin(q1_theta) * np.sin(q2_theta) * np.cos(q1_ra - q2_ra) + np.cos(q1_theta) * np.cos(q2_theta)) )
-
-    if np.sum(prob<0)>0 or np.sum(prob>1)>0:
-        print("Sampling P<0 or P>1:", M, D, Q, flush=True)
-        return -np.inf
-
-    lnlike = np.sum(np.log(prob)*spin + np.log(1-prob)*(1-spin))
+    theta = np.arccos(np.clip(cos_theta, -1.0, 1.0))
     
+    prob = np.where(theta < np.pi / 2, M + A, M - A)
+
+    if np.any(prob < 0) or np.any(prob > 1):
+        print("This shouldn't be happening", flush=True)
+        return -np.inf
+
+    lnlike = np.sum(np.log(prob) * spin + np.log(1 - prob) * (1 - spin))
+
     return lnlike
 
 def lnprob(x,*args):
-    d_dec, q1_dec, q2_dec = x[3], x[6], x[8]
 
-    if d_dec>np.pi/2 or d_dec<-np.pi/2:
-        return -np.inf
+    a_dec = x[3]
 
-    if q1_dec>np.pi/2 or q1_dec<-np.pi/2 or q2_dec>np.pi/2 or q2_dec<-np.pi/2:
+    if a_dec>np.pi/2 or a_dec<-np.pi/2:
         return -np.inf
+    
+    lnprior = np.log(np.cos(a_dec))
 
     lnlike_value = lnlike(x,*args)
-
-    lnprior = np.log(np.cos(d_dec)) + np.log(np.cos(q1_dec)) + np.log(np.cos(q2_dec))
-
+    
     return lnlike_value + lnprior
 
 def nll(x):
@@ -125,10 +112,7 @@ min_values = []
 min1 = np.inf
 
 for m in range(10):
-    inpt = [np.random.uniform(0.4, 0.6), np.random.uniform(0., 0.2), np.random.uniform(0, 2.*np.pi), np.random.uniform(-np.pi/2, np.pi/2), np.random.uniform(0., 0.2)]
-    q1_ra_init = np.random.uniform(0, 2.*np.pi)
-    q2_ra_init = np.random.uniform(q1_ra_init, 2 * np.pi)
-    inpt += [q1_ra_init, np.random.uniform(-np.pi/2, np.pi/2), q2_ra_init, np.random.uniform(-np.pi/2, np.pi/2)]
+    inpt = [np.random.uniform(0.4, 0.6), np.random.uniform(0., 0.2), np.random.uniform(0, 2.*np.pi), np.random.uniform(-np.pi/2, np.pi/2)
     res = minimize(nll, inpt, method="Nelder-Mead")
     if res['fun'] < min1:
         params = res.x
@@ -150,13 +134,13 @@ bic = -2 * (L) + k * np.log(n)
 print("BIC:", bic)
 
 bic_values_for_M = [
-    21012.4110286252, # Longo
-    101051.90731787,  # Iye
-    8469.24333237917, # SDSS_DR7
-    193871.969825225, # GAN_M
-    192618.331159577, # GAN_NM
-    107916.724775013, # Shamir
-    39828.6986758339  # PS_DR1
+    21012.4110286252, # Longo.csv
+    101051.90731787,  # Iye.csv
+    8469.24333237917, # SDSS_DR7.csv
+    193871.969825225, # GAN_M.csv
+    192618.331159577, # GAN_NM.csv
+    107916.724775013, # Shamir.csv
+    39828.6986758339  # PS_DR1.csv
 ]
 
 delta_bic = bic - bic_values_for_M[data_choice]
@@ -170,16 +154,11 @@ max_iters = 600000
 p0 = []     # Initial positions for the walkers
 for i in range(nwalkers):
     M_init = np.random.uniform(0.3, 0.6)
-    D_init = np.random.uniform(0, 0.2)
-    d_ra_init = np.random.uniform(0, 2 * np.pi)
-    d_dec_init = np.random.uniform(-np.pi / 2, np.pi / 2)
-    Q_init = np.random.uniform(0, 0.2)
-    q1_ra_init = np.random.uniform(0, 2 * np.pi)
-    q2_ra_init = np.random.uniform(q1_ra_init, 2 * np.pi)
-    q1_dec_init = np.random.uniform(-np.pi / 2, np.pi / 2)
-    q2_dec_init = np.random.uniform(-np.pi / 2, np.pi / 2)
+    A_init = np.random.uniform(0, 0.2)
+    a_ra_init = np.random.uniform(0, 2 * np.pi)
+    a_dec_init = np.random.uniform(-np.pi / 2, np.pi / 2)
     
-    pi = [M_init, D_init, d_ra_init, d_dec_init, Q_init, q1_ra_init, q1_dec_init, q2_ra_init, q2_dec_init]
+    pi = [M_init, A_init, a_ra_init, a_dec_init]
     p0.append(pi)
 
 autocorr = np.empty(max_iters)
@@ -264,9 +243,9 @@ for i in range(nwalkers):
     plt.scatter(np.array(x)[indices] + burnin, like_i[indices], s=10)
 plt.xlabel("Walker step")
 plt.ylabel("ln(Likelihood)")
-plt.savefig("Plots/"+name+"_MDQ_walkers.png", bbox_inches="tight")
+plt.savefig("Plots/"+name+"_MA_walkers.png", bbox_inches="tight")
 
-labels = [r'${\rm \widehat{M}}$', r'${\rm \widehat{D}}$', r'${\rm d_{\alpha}}$', r'${\rm d_{\delta}}$', r'${\rm \widehat{Q}}$', r'${\rm q_{1,\alpha}}$', r'${\rm q_{1,\delta}}$', r'${\rm q_{2,\alpha}}$', r'${\rm q_{2,\delta}}$']
+labels = [r'${\rm \widehat{M}}$', r'${\rm \widehat{A}}$', r'${\rm a_{\alpha}}$', r'${\rm a_{\delta}}$']
 
 plt.clf()
 
@@ -277,7 +256,7 @@ corner.corner(samples, labels=labels, show_titles=True, quantiles=[], plot_datap
               title_kwargs={"fontsize": 18}, title_fmt='.3f', label_kwargs={"fontsize": 18},
               verbose=True, truths=truth_values)
 
-plt.savefig("Plots/"+name+"_MDQ_corner.png", bbox_inches="tight")
+plt.savefig("Plots/"+name+"_MA_corner.png", bbox_inches="tight")
 
 param_means = np.mean(samples, axis=0)
 param_std = np.std(samples, axis=0)
