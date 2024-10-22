@@ -112,7 +112,7 @@ min_values = []
 min1 = np.inf
 
 for m in range(10):
-    inpt = [np.random.uniform(0.4, 0.6), np.random.uniform(0., 0.2), np.random.uniform(0, 2.*np.pi), np.random.uniform(-np.pi/2, np.pi/2)
+    inpt = [np.random.uniform(0.4, 0.6), np.random.uniform(0., 0.2), np.random.uniform(0, 2.*np.pi), np.random.uniform(-np.pi/2, np.pi/2)]
     res = minimize(nll, inpt, method="Nelder-Mead")
     if res['fun'] < min1:
         params = res.x
@@ -147,7 +147,7 @@ delta_bic = bic - bic_values_for_M[data_choice]
 
 print("Delta BIC:", delta_bic)
 
-ndim = 9
+ndim = 4
 nwalkers = 22
 max_iters = 600000
 
