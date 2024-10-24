@@ -6,6 +6,6 @@ Contact Dhruva Patel (zx970439@ou.ac.uk) and Harry Desmond (harry.desmond@port.a
 
 ------
 
-Also included is a program numpyro_spins_HMC.py for reproducing Stiskalek & Desmond 2024 (https://arxiv.org/abs/XXXX.XXXXX), assessing the significance of a dipole anisotropy in Hyper Suprime-Cam Data Release 3. This code uses NumPyro to sample with the No U-Turns Sampler, and harmonic to calculate evidences.
+Also included is a program numpyro_spins_HSC.py for reproducing Stiskalek & Desmond 2024 (https://arxiv.org/abs/XXXX.XXXXX), assessing the significance of a dipole anisotropy in Hyper Suprime-Cam Data Release 3. This code uses NumPyro to sample with the No U-Turns Sampler, and harmonic to calculate evidences.
 
 Contact Richard Stiskalek (richard.stiskalek@physics.ox.ac.uk) and Harry Desmond (harry.desmond@port.ac.uk) with feedback or questions.
